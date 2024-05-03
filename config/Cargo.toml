@@ -1,0 +1,11 @@
+[package]
+name = "config"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+config-driver = { workspace = true }
+serde = { workspace = true }
+
+# Internal dependencies
+config-derive = { workspace = true }

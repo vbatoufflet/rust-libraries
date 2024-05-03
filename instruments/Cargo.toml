@@ -1,0 +1,43 @@
+[package]
+name = "instruments"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+rpc = []
+
+[dependencies]
+async-trait = { workspace = true }
+chrono = { workspace = true }
+colored = { workspace = true }
+http = { workspace = true }
+opentelemetry = { features = ["logs", "metrics", "trace"], workspace = true }
+opentelemetry_sdk = { features = [
+	"logs",
+	"metrics",
+	"rt-tokio",
+	"trace",
+], workspace = true }
+opentelemetry-appender-tracing = { workspace = true }
+opentelemetry-otlp = { features = [
+	"logs",
+	"metrics",
+	"trace",
+], workspace = true }
+opentelemetry-semantic-conventions = { workspace = true }
+opentelemetry-stdout = { features = [
+	"logs",
+	"metrics",
+	"trace",
+], workspace = true }
+paste = { workspace = true }
+percent-encoding = { workspace = true }
+serde = { workspace = true }
+tower-http = { features = ["trace"], workspace = true }
+tracing = { workspace = true }
+tracing-opentelemetry = { workspace = true }
+tracing-subscriber = { features = ["env-filter"], workspace = true }
+
+# Internal dependencies
+config = { workspace = true }
+errors = { workspace = true }

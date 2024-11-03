@@ -140,7 +140,7 @@ impl OnFailure<GrpcFailureClass> for InstrumentsOnFailure {
         );
 
         match failure_code {
-            2 | 8 | 12 | 13 | 14 => {
+            2 | 8 | 13 | 14 => {
                 tracing::error!(
                     rpc.code = rpc_code,
                     rpc.method = rpc_method,

@@ -40,9 +40,9 @@ fn new_provider(resource: Resource, sample: f64, exporter: &Exporter) -> Result<
         Exporter::Noop => TracerProvider::builder().with_config(trace_config).build(),
 
         Exporter::Otlp => {
-            let exporter = opentelemetry_otlp::new_exporter()
-                .tonic()
-                .build_span_exporter()
+            let exporter = opentelemetry_otlp::SpanExporter::builder()
+                .with_tonic()
+                .build()
                 .map_err(|v| Error::Internal(v.to_string()))?;
 
             TracerProvider::builder()
@@ -52,7 +52,7 @@ fn new_provider(resource: Resource, sample: f64, exporter: &Exporter) -> Result<
         }
 
         Exporter::Stdout => {
-            let exporter = opentelemetry_stdout::SpanExporter::builder().build();
+            let exporter = opentelemetry_stdout::SpanExporter::default();
 
             TracerProvider::builder()
                 .with_config(trace_config)

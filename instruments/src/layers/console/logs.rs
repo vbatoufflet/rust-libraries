@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use colored::Colorize;
 use opentelemetry::logs::AnyValue;
-use opentelemetry_sdk::export::logs::{ExportResult, LogData};
+use opentelemetry_sdk::export::logs::{ExportResult, LogBatch};
 
 use super::severity_to_str;
 
@@ -28,26 +28,23 @@ impl Debug for LogExporter {
 
 #[async_trait]
 impl opentelemetry_sdk::export::logs::LogExporter for LogExporter {
-    async fn export(&mut self, batch: Vec<LogData>) -> ExportResult {
+    async fn export(&mut self, batch: LogBatch<'_>) -> ExportResult {
         let Some(writer) = &mut self.writer else {
             return Err("exporter is shut down".into());
         };
 
-        for log_data in batch {
-            let ts = match log_data.record.observed_timestamp.or(log_data.record.timestamp) {
+        for (record, _) in batch.iter() {
+            let ts = match record.observed_timestamp.or(record.timestamp) {
                 Some(v) => Into::<DateTime<Utc>>::into(v),
                 None => continue,
             };
 
-            let severity = severity_to_str(log_data.record.severity_number);
+            let severity = severity_to_str(record.severity_number);
 
-            let attributes: Vec<String> = log_data
-                .record
-                .attributes
-                .unwrap_or_default()
-                .into_iter()
+            let attributes: Vec<String> = record
+                .attributes_iter()
                 .filter_map(|(key, value)| {
-                    let mut key: String = key.into();
+                    let mut key: String = key.as_str().to_string();
                     key.push('=');
 
                     let value = match value {
@@ -62,7 +59,7 @@ impl opentelemetry_sdk::export::logs::LogExporter for LogExporter {
                 })
                 .collect();
 
-            let body = if let Some(AnyValue::String(body)) = log_data.record.body {
+            let body = if let Some(AnyValue::String(body)) = &record.body {
                 body.to_string()
             } else {
                 continue;

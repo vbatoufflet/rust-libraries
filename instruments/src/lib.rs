@@ -96,7 +96,7 @@ pub fn new(service_name: &'static str, service_version: &'static str) -> Result<
         KeyValue::new(semconv::resource::SERVICE_VERSION, service_version.to_string()),
     ];
     if let Ok(env) = env::var("ENV") {
-        pairs.push(KeyValue::new(semconv::resource::DEPLOYMENT_ENVIRONMENT, env));
+        pairs.push(KeyValue::new(semconv::resource::DEPLOYMENT_ENVIRONMENT_NAME, env));
     }
 
     let resource = Resource::new(pairs);

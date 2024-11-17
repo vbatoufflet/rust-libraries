@@ -1,9 +1,6 @@
 use opentelemetry::global;
 use opentelemetry_sdk::{
-    metrics::{
-        reader::{DefaultAggregationSelector, DefaultTemporalitySelector},
-        PeriodicReader, SdkMeterProvider,
-    },
+    metrics::{PeriodicReader, SdkMeterProvider},
     runtime, Resource,
 };
 use tracing::Subscriber;
@@ -31,12 +28,10 @@ fn new_provider(resource: Resource, exporter: &Exporter) -> Result<SdkMeterProvi
         Exporter::Noop => SdkMeterProvider::builder().with_resource(resource).build(),
 
         Exporter::Otlp => {
-            let exporter = opentelemetry_otlp::new_exporter()
-                .tonic()
-                .build_metrics_exporter(
-                    Box::new(DefaultAggregationSelector::new()),
-                    Box::new(DefaultTemporalitySelector::new()),
-                )
+            let exporter = opentelemetry_otlp::MetricExporter::builder()
+                .with_tonic()
+                .with_temporality(opentelemetry_sdk::metrics::Temporality::Delta)
+                .build()
                 .map_err(|v| Error::Internal(v.to_string()))?;
 
             SdkMeterProvider::builder()
@@ -46,7 +41,7 @@ fn new_provider(resource: Resource, exporter: &Exporter) -> Result<SdkMeterProvi
         }
 
         Exporter::Stdout => {
-            let exporter = opentelemetry_stdout::MetricsExporter::builder().build();
+            let exporter = opentelemetry_stdout::MetricExporter::builder().build();
 
             SdkMeterProvider::builder()
                 .with_resource(resource)

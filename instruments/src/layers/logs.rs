@@ -1,8 +1,5 @@
 use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
-use opentelemetry_sdk::{
-    logs::{Config, LoggerProvider},
-    runtime, Resource,
-};
+use opentelemetry_sdk::{logs::LoggerProvider, runtime, Resource};
 
 use errors::prelude::*;
 
@@ -20,33 +17,31 @@ pub fn new_layer(
 }
 
 fn new_provider(resource: Resource, exporter: &Exporter) -> Result<LoggerProvider, Error> {
-    let config = Config::default().with_resource(resource);
-
     let provider = match exporter {
         Exporter::Console => LoggerProvider::builder()
-            .with_config(config)
+            .with_resource(resource)
             .with_simple_exporter(console::logs::LogExporter::default())
             .build(),
 
-        Exporter::Noop => LoggerProvider::builder().with_config(config).build(),
+        Exporter::Noop => LoggerProvider::builder().with_resource(resource).build(),
 
         Exporter::Otlp => {
-            let exporter = opentelemetry_otlp::new_exporter()
-                .tonic()
-                .build_log_exporter()
+            let exporter = opentelemetry_otlp::LogExporter::builder()
+                .with_tonic()
+                .build()
                 .map_err(|v| Error::Internal(v.to_string()))?;
 
             LoggerProvider::builder()
-                .with_config(config)
+                .with_resource(resource)
                 .with_batch_exporter(exporter, runtime::Tokio)
                 .build()
         }
 
         Exporter::Stdout => {
-            let exporter = opentelemetry_stdout::LogExporterBuilder::default().build();
+            let exporter = opentelemetry_stdout::LogExporter::default();
 
             LoggerProvider::builder()
-                .with_config(config)
+                .with_resource(resource)
                 .with_simple_exporter(exporter)
                 .build()
         }

@@ -24,7 +24,9 @@ opentelemetry-otlp = { features = [
     "metrics",
     "trace",
 ], workspace = true }
-opentelemetry-semantic-conventions = { workspace = true }
+opentelemetry-semantic-conventions = { features = [
+    "semconv_experimental",
+], workspace = true }
 opentelemetry-stdout = { features = [
     "logs",
     "metrics",

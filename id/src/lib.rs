@@ -3,8 +3,13 @@ use std::{fmt, str};
 use base32::Alphabet;
 use uuid::Uuid;
 
+use errors::prelude::*;
+
 #[cfg(test)]
 mod tests;
+
+#[cfg(feature = "sqlx")]
+mod sqlx;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Id(String, Uuid);
@@ -56,9 +61,14 @@ impl str::FromStr for Id {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, Error, PartialEq)]
 pub enum Error {
+    #[error("group count")]
     GroupCount,
+
+    #[error("encoding")]
     Encoding,
+
+    #[error("uuid")]
     Uuid,
 }

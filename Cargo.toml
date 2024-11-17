@@ -21,6 +21,7 @@ paste = "1.0"
 percent-encoding = "2.3"
 quote = "1.0"
 serde = "1.0"
+sqlx = "0.8"
 syn = "2.0"
 thiserror = "1.0"
 tokio = { version = "1.37", features = ["macros", "rt-multi-thread"] }
@@ -34,6 +35,7 @@ uuid = { features = ["v7"], version = "1.11" }
 config = { path = "config" }
 config-derive = { path = "config-derive" }
 errors = { path = "errors" }
+id = { path = "id" }
 instruments = { path = "instruments" }
 
 [workspace.lints.clippy]

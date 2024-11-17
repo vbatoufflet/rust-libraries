@@ -3,12 +3,18 @@ name = "id"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+sqlx = []
+
 [dependencies]
 base32 = { workspace = true }
+sqlx = { workspace = true }
 uuid = { workspace = true }
 
-[dev-dependencies]
+# Internal dependencies
 errors = { workspace = true }
+
+[dev-dependencies]
 tokio = { workspace = true }
 
 [lints]

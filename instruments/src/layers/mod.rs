@@ -1,5 +1,5 @@
-pub(crate) mod console;
-pub(crate) mod logs;
-pub(crate) mod metrics;
-pub(crate) mod rpc;
-pub(crate) mod traces;
+pub mod console;
+pub mod logs;
+pub mod metrics;
+pub mod rpc;
+pub mod traces;

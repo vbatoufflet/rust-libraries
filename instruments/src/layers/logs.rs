@@ -10,22 +10,22 @@ use crate::{Error, Exporter};
 
 use super::console;
 
-pub(crate) fn new_layer(
+pub fn new_layer(
     resource: Resource,
-    exporter: Exporter,
+    exporter: &Exporter,
 ) -> Result<OpenTelemetryTracingBridge<LoggerProvider, opentelemetry_sdk::logs::Logger>, Error> {
     let logger_provider = new_provider(resource, exporter)?;
 
     Ok(OpenTelemetryTracingBridge::new(&logger_provider))
 }
 
-fn new_provider(resource: Resource, exporter: Exporter) -> Result<LoggerProvider, Error> {
+fn new_provider(resource: Resource, exporter: &Exporter) -> Result<LoggerProvider, Error> {
     let config = Config::default().with_resource(resource);
 
     let provider = match exporter {
         Exporter::Console => LoggerProvider::builder()
             .with_config(config)
-            .with_simple_exporter(console::logs::LogsExporter::default())
+            .with_simple_exporter(console::logs::LogExporter::default())
             .build(),
 
         Exporter::Noop => LoggerProvider::builder().with_config(config).build(),

@@ -9,3 +9,6 @@ serde = { workspace = true }
 
 # Internal dependencies
 config-derive = { workspace = true }
+
+[lints]
+workspace = true

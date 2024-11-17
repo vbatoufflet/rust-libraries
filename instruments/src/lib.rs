@@ -36,7 +36,7 @@ pub enum Error {
     Internal(String),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Exporter {
     Console,
     Noop,
@@ -49,11 +49,11 @@ impl FromStr for Exporter {
 
     fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         match s.to_ascii_lowercase().as_str() {
-            "console" => Ok(Exporter::Console),
-            "noop" => Ok(Exporter::Noop),
-            "otlp" => Ok(Exporter::Otlp),
-            "stdout" => Ok(Exporter::Stdout),
-            _ => Err(Error::Configuration(format!("unsupported exporter: {}", s))),
+            "console" => Ok(Self::Console),
+            "noop" => Ok(Self::Noop),
+            "otlp" => Ok(Self::Otlp),
+            "stdout" => Ok(Self::Stdout),
+            _ => Err(Error::Configuration(format!("unsupported exporter: {s}"))),
         }
     }
 }
@@ -101,14 +101,14 @@ pub fn new(service_name: &'static str, service_version: &'static str) -> Result<
 
     let resource = Resource::new(pairs);
 
-    let logs_layer = logs::new_layer(resource.clone(), logs_exporter)?;
+    let logs_layer = logs::new_layer(resource.clone(), &logs_exporter)?;
 
-    let metrics_layer = metrics::new_layer(resource.clone(), metrics_exporter)?;
+    let metrics_layer = metrics::new_layer(resource.clone(), &metrics_exporter)?;
 
     let traces_layer = traces::new_layer(
-        &service_name,
+        service_name,
         resource,
-        traces_exporter,
+        &traces_exporter,
         config.traces_ratio_sample,
     )?;
 

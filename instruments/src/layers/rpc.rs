@@ -79,9 +79,9 @@ impl Visit for RPCVisitor {
 
     fn record_str(&mut self, field: &tracing::field::Field, value: &str) {
         if field.name() == RPC_METHOD {
-            self.rpc_method = Some(value.to_owned())
+            self.rpc_method = Some(value.to_owned());
         } else if field.name() == RPC_SERVICE {
-            self.rpc_service = Some(value.to_owned())
+            self.rpc_service = Some(value.to_owned());
         }
     }
 }

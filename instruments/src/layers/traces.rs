@@ -16,7 +16,7 @@ use crate::{Error, Exporter};
 pub fn new_layer<S>(
     service_name: &'static str,
     resource: Resource,
-    exporter: Exporter,
+    exporter: &Exporter,
     ratio_sample: f64,
 ) -> Result<OpenTelemetryLayer<S, Tracer>, Error>
 where
@@ -30,11 +30,12 @@ where
     Ok(OpenTelemetryLayer::new(tracer_provider.tracer(service_name)))
 }
 
-fn new_provider(resource: Resource, sample: f64, exporter: Exporter) -> Result<TracerProvider, Error> {
+fn new_provider(resource: Resource, sample: f64, exporter: &Exporter) -> Result<TracerProvider, Error> {
     let trace_config = Config::default()
         .with_sampler(Sampler::TraceIdRatioBased(sample))
         .with_resource(resource);
 
+    #[allow(clippy::match_wildcard_for_single_variants)]
     let provider = match exporter {
         Exporter::Noop => TracerProvider::builder().with_config(trace_config).build(),
 
@@ -60,8 +61,7 @@ fn new_provider(resource: Resource, sample: f64, exporter: Exporter) -> Result<T
         }
 
         _ => Err(Error::Configuration(format!(
-            "unsupported exporter: {:?}",
-            exporter
+            "unsupported exporter: {exporter:?}",
         )))?,
     };
 

@@ -1,0 +1,14 @@
+{
+  "enable_language_server": true,
+  "formatter": "auto",
+  "lsp": {
+    "rust-analyzer": {
+      "initialization_options": {
+        "check": {
+          "command": "clippy"
+        }
+      }
+    }
+  },
+  "remove_trailing_whitespace_on_save": true
+}

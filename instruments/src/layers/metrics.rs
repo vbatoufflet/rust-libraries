@@ -14,7 +14,7 @@ use errors::prelude::*;
 
 use crate::{Error, Exporter};
 
-pub(crate) fn new_layer<S>(resource: Resource, exporter: Exporter) -> Result<MetricsLayer<S>, Error>
+pub fn new_layer<S>(resource: Resource, exporter: &Exporter) -> Result<MetricsLayer<S>, Error>
 where
     S: Subscriber + for<'span> LookupSpan<'span>,
 {
@@ -25,7 +25,8 @@ where
     Ok(MetricsLayer::new(meter_provider))
 }
 
-fn new_provider(resource: Resource, exporter: Exporter) -> Result<SdkMeterProvider, Error> {
+fn new_provider(resource: Resource, exporter: &Exporter) -> Result<SdkMeterProvider, Error> {
+    #[allow(clippy::match_wildcard_for_single_variants)]
     let provider = match exporter {
         Exporter::Noop => SdkMeterProvider::builder().with_resource(resource).build(),
 
@@ -54,8 +55,7 @@ fn new_provider(resource: Resource, exporter: Exporter) -> Result<SdkMeterProvid
         }
 
         _ => Err(Error::Configuration(format!(
-            "unsupported exporter: {:?}",
-            exporter
+            "unsupported exporter: {exporter:?}",
         )))?,
     };
 

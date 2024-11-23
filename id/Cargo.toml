@@ -4,10 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
+serde = []
 sqlx = []
 
 [dependencies]
 base32 = { workspace = true }
+serde = { workspace = true }
 sqlx = { workspace = true }
 uuid = { workspace = true }
 

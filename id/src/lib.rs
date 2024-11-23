@@ -8,6 +8,8 @@ use errors::prelude::*;
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "serde")]
+mod serde;
 #[cfg(feature = "sqlx")]
 mod sqlx;
 

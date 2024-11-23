@@ -11,7 +11,7 @@ mod tests;
 #[cfg(feature = "sqlx")]
 mod sqlx;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Id(String, Uuid);
 
 impl Id {

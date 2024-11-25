@@ -13,7 +13,7 @@ mod serde;
 #[cfg(feature = "sqlx")]
 mod sqlx;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct Id(String, Uuid);
 
 impl Id {
@@ -31,16 +31,25 @@ impl Id {
     pub fn uuid(&self) -> &Uuid {
         &self.1
     }
-}
 
-impl fmt::Display for Id {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
+    fn fmt(&self) -> String {
+        format!(
             "{}_{}",
             self.0,
             base32::encode(Alphabet::Crockford, self.1.as_bytes()).to_lowercase()
         )
+    }
+}
+
+impl fmt::Debug for Id {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "\"{}\"", self.fmt())
+    }
+}
+
+impl fmt::Display for Id {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.fmt())
     }
 }
 

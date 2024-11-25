@@ -16,14 +16,14 @@ async fn new() -> Result<()> {
 
 #[tokio::test]
 async fn parse() -> Result<()> {
-    let result = Id::from_str("prf_agjttnzrr54jhngnwnpwhf42tu");
+    let result = Id::from_str("prf_069p3tgfmxz85cjmr90xb17rf0");
     assert!(result.is_ok());
 
     let id = result.unwrap();
     assert_eq!(id.prefix(), "prf");
     assert_eq!(
         id.uuid(),
-        &Uuid::parse_str("019339b7-318f-7893-b4cd-b35f63979a9d").unwrap()
+        &Uuid::parse_str("019361ea-0fa7-7e82-b254-c241d584f878").unwrap()
     );
 
     Ok(())

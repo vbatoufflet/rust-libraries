@@ -39,7 +39,7 @@ impl fmt::Display for Id {
             f,
             "{}_{}",
             self.0,
-            base32::encode(Alphabet::Rfc4648Lower { padding: false }, self.1.as_bytes())
+            base32::encode(Alphabet::Crockford, self.1.as_bytes()).to_lowercase()
         )
     }
 }
@@ -52,7 +52,7 @@ impl str::FromStr for Id {
             return Err(Error::GroupCount);
         };
 
-        let Some(uuid) = base32::decode(Alphabet::Rfc4648Lower { padding: false }, id) else {
+        let Some(uuid) = base32::decode(Alphabet::Crockford, &id.to_uppercase()) else {
             return Err(Error::Encoding);
         };
 

@@ -1,6 +1,5 @@
-use proc_macro::TokenStream;
-
 use darling::FromField;
+use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Data, DataStruct, Expr, ExprPath, Fields, Ident, Lit, Meta};
 
@@ -45,6 +44,21 @@ fn expand_derive_config(ast: &syn::DeriveInput) -> TokenStream {
                     .add_source(config::__internal::Environment::with_prefix(prefix))
                     .build()?
                     .try_deserialize()
+                    .map_err(|err| {
+                        let msg = err.to_string();
+                        if msg.starts_with("missing field `") && msg.ends_with("`") {
+                            if let Some(field_name) = msg.split('`').nth(1) {
+                                return ConfigError::Message(
+                                    format!(
+                                        r#"environment variable "{}_{}" is not set"#,
+                                        prefix,
+                                        field_name.to_uppercase(),
+                                    )
+                                );
+                            }
+                        }
+                        err
+                    })
             }
         }
     }

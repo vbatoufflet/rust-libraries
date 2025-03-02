@@ -22,6 +22,15 @@ impl Id {
         Self(prefix.to_owned(), uuid::Uuid::now_v7())
     }
 
+    pub fn from_slice(prefix: &str, b: &[u8]) -> Result<Self, Error> {
+        let uuid = Uuid::from_slice(b).map_err(|_| Error::Uuid)?;
+        if uuid.get_version_num() != 7 {
+            return Err(Error::Uuid);
+        }
+
+        Ok(Self(prefix.to_owned(), uuid))
+    }
+
     #[must_use]
     pub fn prefix(&self) -> &str {
         &self.0

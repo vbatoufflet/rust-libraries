@@ -1,8 +1,7 @@
 use opentelemetry::{global, trace::TracerProvider as _};
 use opentelemetry_sdk::{
     propagation::TraceContextPropagator,
-    runtime,
-    trace::{Config, Sampler, Tracer, TracerProvider},
+    trace::{Sampler, SdkTracerProvider, Tracer},
     Resource,
 };
 use tracing::Subscriber;
@@ -30,14 +29,15 @@ where
     Ok(OpenTelemetryLayer::new(tracer_provider.tracer(service_name)))
 }
 
-fn new_provider(resource: Resource, sample: f64, exporter: &Exporter) -> Result<TracerProvider, Error> {
-    let trace_config = Config::default()
-        .with_sampler(Sampler::TraceIdRatioBased(sample))
-        .with_resource(resource);
+fn new_provider(resource: Resource, sample: f64, exporter: &Exporter) -> Result<SdkTracerProvider, Error> {
+    let sampler = Sampler::TraceIdRatioBased(sample);
 
     #[allow(clippy::match_wildcard_for_single_variants)]
     let provider = match exporter {
-        Exporter::Noop => TracerProvider::builder().with_config(trace_config).build(),
+        Exporter::Noop => SdkTracerProvider::builder()
+            .with_resource(resource)
+            .with_sampler(sampler)
+            .build(),
 
         Exporter::Otlp => {
             let exporter = opentelemetry_otlp::SpanExporter::builder()
@@ -45,17 +45,19 @@ fn new_provider(resource: Resource, sample: f64, exporter: &Exporter) -> Result<
                 .build()
                 .map_err(|v| Error::Internal(v.to_string()))?;
 
-            TracerProvider::builder()
-                .with_config(trace_config)
-                .with_batch_exporter(exporter, runtime::Tokio)
+            SdkTracerProvider::builder()
+                .with_resource(resource)
+                .with_sampler(sampler)
+                .with_batch_exporter(exporter)
                 .build()
         }
 
         Exporter::Stdout => {
             let exporter = opentelemetry_stdout::SpanExporter::default();
 
-            TracerProvider::builder()
-                .with_config(trace_config)
+            SdkTracerProvider::builder()
+                .with_resource(resource)
+                .with_sampler(sampler)
                 .with_simple_exporter(exporter)
                 .build()
         }

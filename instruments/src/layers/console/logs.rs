@@ -1,21 +1,27 @@
-use std::{fmt::Debug, fmt::Formatter, io};
+use std::{
+    fmt::{Debug, Formatter},
+    io::{self, Stdout, Write},
+    sync::Mutex,
+};
 
-use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use colored::Colorize;
 use opentelemetry::logs::AnyValue;
-use opentelemetry_sdk::export::logs::{ExportResult, LogBatch};
+use opentelemetry_sdk::{
+    error::{OTelSdkError, OTelSdkResult},
+    logs::LogBatch,
+};
 
 use super::severity_to_str;
 
 pub struct LogExporter {
-    writer: Option<Box<dyn io::Write + Send + Sync>>,
+    writer: Mutex<Stdout>,
 }
 
 impl Default for LogExporter {
     fn default() -> Self {
         Self {
-            writer: Some(Box::new(io::stdout())),
+            writer: Mutex::new(io::stdout()),
         }
     }
 }
@@ -26,20 +32,19 @@ impl Debug for LogExporter {
     }
 }
 
-#[async_trait]
-impl opentelemetry_sdk::export::logs::LogExporter for LogExporter {
-    async fn export(&mut self, batch: LogBatch<'_>) -> ExportResult {
-        let Some(writer) = &mut self.writer else {
-            return Err("exporter is shut down".into());
+impl opentelemetry_sdk::logs::LogExporter for LogExporter {
+    async fn export(&self, batch: LogBatch<'_>) -> OTelSdkResult {
+        let Ok(writer) = &mut self.writer.lock() else {
+            return Err(OTelSdkError::AlreadyShutdown);
         };
 
         for (record, _) in batch.iter() {
-            let ts = match record.observed_timestamp.or(record.timestamp) {
+            let ts = match record.observed_timestamp().or_else(|| record.timestamp()) {
                 Some(v) => Into::<DateTime<Utc>>::into(v),
                 None => continue,
             };
 
-            let severity = severity_to_str(record.severity_number);
+            let severity = severity_to_str(record.severity_number());
 
             let attributes: Vec<String> = record
                 .attributes_iter()
@@ -59,7 +64,7 @@ impl opentelemetry_sdk::export::logs::LogExporter for LogExporter {
                 })
                 .collect();
 
-            let body = if let Some(AnyValue::String(body)) = &record.body {
+            let body = if let Some(AnyValue::String(body)) = &record.body() {
                 body.to_string()
             } else {
                 continue;
@@ -82,7 +87,11 @@ impl opentelemetry_sdk::export::logs::LogExporter for LogExporter {
         Ok(())
     }
 
-    fn shutdown(&mut self) {
-        self.writer.take();
+    fn shutdown(&self) -> OTelSdkResult {
+        self.writer
+            .lock()
+            .map_err(|err| OTelSdkError::InternalFailure(err.to_string()))?
+            .flush()
+            .map_err(|err| OTelSdkError::InternalFailure(err.to_string()))
     }
 }

@@ -1,7 +1,7 @@
 use opentelemetry::global;
 use opentelemetry_sdk::{
     metrics::{PeriodicReader, SdkMeterProvider},
-    runtime, Resource,
+    Resource,
 };
 use tracing::Subscriber;
 use tracing_opentelemetry::MetricsLayer;
@@ -36,7 +36,7 @@ fn new_provider(resource: Resource, exporter: &Exporter) -> Result<SdkMeterProvi
 
             SdkMeterProvider::builder()
                 .with_resource(resource)
-                .with_reader(PeriodicReader::builder(exporter, runtime::Tokio).build())
+                .with_reader(PeriodicReader::builder(exporter).build())
                 .build()
         }
 
@@ -45,7 +45,7 @@ fn new_provider(resource: Resource, exporter: &Exporter) -> Result<SdkMeterProvi
 
             SdkMeterProvider::builder()
                 .with_resource(resource)
-                .with_reader(PeriodicReader::builder(exporter, runtime::Tokio).build())
+                .with_reader(PeriodicReader::builder(exporter).build())
                 .build()
         }
 

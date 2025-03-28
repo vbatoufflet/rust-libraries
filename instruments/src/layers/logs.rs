@@ -1,5 +1,8 @@
 use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
-use opentelemetry_sdk::{logs::LoggerProvider, runtime, Resource};
+use opentelemetry_sdk::{
+    logs::{SdkLogger, SdkLoggerProvider},
+    Resource,
+};
 
 use errors::prelude::*;
 
@@ -10,20 +13,20 @@ use super::console;
 pub fn new_layer(
     resource: Resource,
     exporter: &Exporter,
-) -> Result<OpenTelemetryTracingBridge<LoggerProvider, opentelemetry_sdk::logs::Logger>, Error> {
+) -> Result<OpenTelemetryTracingBridge<SdkLoggerProvider, SdkLogger>, Error> {
     let logger_provider = new_provider(resource, exporter)?;
 
     Ok(OpenTelemetryTracingBridge::new(&logger_provider))
 }
 
-fn new_provider(resource: Resource, exporter: &Exporter) -> Result<LoggerProvider, Error> {
+fn new_provider(resource: Resource, exporter: &Exporter) -> Result<SdkLoggerProvider, Error> {
     let provider = match exporter {
-        Exporter::Console => LoggerProvider::builder()
+        Exporter::Console => SdkLoggerProvider::builder()
             .with_resource(resource)
             .with_simple_exporter(console::logs::LogExporter::default())
             .build(),
 
-        Exporter::Noop => LoggerProvider::builder().with_resource(resource).build(),
+        Exporter::Noop => SdkLoggerProvider::builder().with_resource(resource).build(),
 
         Exporter::Otlp => {
             let exporter = opentelemetry_otlp::LogExporter::builder()
@@ -31,16 +34,16 @@ fn new_provider(resource: Resource, exporter: &Exporter) -> Result<LoggerProvide
                 .build()
                 .map_err(|v| Error::Internal(v.to_string()))?;
 
-            LoggerProvider::builder()
+            SdkLoggerProvider::builder()
                 .with_resource(resource)
-                .with_batch_exporter(exporter, runtime::Tokio)
+                .with_batch_exporter(exporter)
                 .build()
         }
 
         Exporter::Stdout => {
             let exporter = opentelemetry_stdout::LogExporter::default();
 
-            LoggerProvider::builder()
+            SdkLoggerProvider::builder()
                 .with_resource(resource)
                 .with_simple_exporter(exporter)
                 .build()

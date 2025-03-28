@@ -4,13 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-rpc = []
+rpc = ["dep:http", "dep:percent-encoding", "dep:tower-http"]
 
 [dependencies]
-async-trait = { workspace = true }
 chrono = { workspace = true }
 colored = { workspace = true }
-http = { workspace = true }
+http = { optional = true, workspace = true }
 opentelemetry = { features = ["logs", "metrics", "trace"], workspace = true }
 opentelemetry_sdk = { features = [
     "logs",
@@ -20,6 +19,7 @@ opentelemetry_sdk = { features = [
 ], workspace = true }
 opentelemetry-appender-tracing = { workspace = true }
 opentelemetry-otlp = { features = [
+    "grpc-tonic",
     "logs",
     "metrics",
     "trace",
@@ -33,9 +33,10 @@ opentelemetry-stdout = { features = [
     "trace",
 ], workspace = true }
 paste = { workspace = true }
-percent-encoding = { workspace = true }
+percent-encoding = { optional = true, workspace = true }
 serde = { workspace = true }
-tower-http = { features = ["trace"], workspace = true }
+thiserror = { workspace = true }
+tower-http = { features = ["trace"], optional = true, workspace = true }
 tracing = { workspace = true }
 tracing-opentelemetry = { workspace = true }
 tracing-subscriber = { features = ["env-filter"], workspace = true }

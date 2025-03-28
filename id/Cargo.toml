@@ -4,13 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-serde = []
-sqlx = []
+serde = ["dep:serde"]
+sqlx = ["dep:sqlx"]
 
 [dependencies]
 base32 = { workspace = true }
-serde = { workspace = true }
-sqlx = { workspace = true }
+serde = { optional = true, workspace = true }
+sqlx = { optional = true, workspace = true }
+thiserror = { workspace = true }
 uuid = { features = ["v4", "v7"], workspace = true }
 
 # Internal dependencies

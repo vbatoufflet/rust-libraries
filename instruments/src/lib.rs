@@ -99,7 +99,7 @@ pub fn new(service_name: &'static str, service_version: &'static str) -> Result<
         pairs.push(KeyValue::new(semconv::resource::DEPLOYMENT_ENVIRONMENT_NAME, env));
     }
 
-    let resource = Resource::new(pairs);
+    let resource = Resource::builder().with_attributes(pairs).build();
 
     let logs_layer = logs::new_layer(resource.clone(), &logs_exporter)?;
 

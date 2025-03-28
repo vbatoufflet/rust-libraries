@@ -18,16 +18,17 @@ pub struct Id(String, Uuid);
 
 impl Id {
     #[must_use]
-    pub fn new(prefix: &str) -> Self {
-        Self(prefix.to_owned(), uuid::Uuid::now_v7())
+    pub fn new_ordered(prefix: &str) -> Self {
+        Self(prefix.to_owned(), Uuid::now_v7())
+    }
+
+    #[must_use]
+    pub fn new_unordered(prefix: &str) -> Self {
+        Self(prefix.to_owned(), Uuid::new_v4())
     }
 
     pub fn from_slice(prefix: &str, b: &[u8]) -> Result<Self, Error> {
         let uuid = Uuid::from_slice(b).map_err(|_| Error::Uuid)?;
-        if uuid.get_version_num() != 7 {
-            return Err(Error::Uuid);
-        }
-
         Ok(Self(prefix.to_owned(), uuid))
     }
 

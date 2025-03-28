@@ -7,7 +7,7 @@ use crate::Id;
 
 #[tokio::test]
 async fn new() -> Result<()> {
-    let id = Id::new("prf");
+    let id = Id::new_unordered("prf");
     assert_eq!(id.prefix(), "prf");
     assert_eq!(id.to_string().len(), 30);
 

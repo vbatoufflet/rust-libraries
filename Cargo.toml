@@ -25,12 +25,12 @@ serde = "1.0"
 sqlx = "0.8"
 syn = "2.0"
 thiserror = "1.0"
-tokio = { version = "1.37", features = ["macros", "rt-multi-thread"] }
+tokio = { features = ["macros", "rt-multi-thread"], version = "1.37" }
 tower-http = "0.6"
 tracing = "0.1.28"
 tracing-opentelemetry = "0.28"
 tracing-subscriber = "0.3"
-uuid = { features = ["v7"], version = "1.11" }
+uuid = { version = "1.11" }
 
 # Internal dependencies
 config = { path = "config" }

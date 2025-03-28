@@ -11,7 +11,7 @@ sqlx = []
 base32 = { workspace = true }
 serde = { workspace = true }
 sqlx = { workspace = true }
-uuid = { workspace = true }
+uuid = { features = ["v4", "v7"], workspace = true }
 
 # Internal dependencies
 errors = { workspace = true }

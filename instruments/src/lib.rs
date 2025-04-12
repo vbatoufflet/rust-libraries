@@ -1,4 +1,4 @@
-use std::{env, result, str::FromStr};
+use std::{env, result, str::FromStr, vec::Vec};
 
 use opentelemetry::KeyValue;
 use opentelemetry_sdk::Resource;
@@ -39,9 +39,8 @@ pub enum Error {
 #[derive(Debug, Eq, PartialEq)]
 pub enum Exporter {
     Console,
-    Noop,
+    None,
     Otlp,
-    Stdout,
 }
 
 impl FromStr for Exporter {
@@ -50,44 +49,34 @@ impl FromStr for Exporter {
     fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         match s.to_ascii_lowercase().as_str() {
             "console" => Ok(Self::Console),
-            "noop" => Ok(Self::Noop),
+            "none" => Ok(Self::None),
             "otlp" => Ok(Self::Otlp),
-            "stdout" => Ok(Self::Stdout),
             _ => Err(Error::Configuration(format!("unsupported exporter: {s}"))),
         }
     }
 }
 
+pub fn exporters_from_env(key: &str) -> Result<Vec<Exporter>, Error> {
+    env::var(key).map_or_else(
+        |_| Ok(vec![Exporter::Console]),
+        |s| s.split(',').map(|s| s.trim().parse()).collect(),
+    )
+}
+
 #[derive(Config, Debug, Deserialize)]
 pub struct Config {
-    #[config(default = "console")]
-    pub logs_exporter: String,
-
     #[config(default = "info")]
     pub logs_filter: String,
-
-    #[config(default = "noop")]
-    pub metrics_exporter: String,
 
     #[config(default = "info")]
     pub metrics_filter: String,
 
-    #[config(default = "noop")]
-    pub traces_exporter: String,
-
     #[config(default = "info")]
     pub traces_filter: String,
-
-    #[config(default = "0")]
-    pub traces_ratio_sample: f64,
 }
 
 pub fn new(service_name: &'static str, service_version: &'static str) -> Result<(), Error> {
     let config = Config::from_env("INSTRUMENTS").map_err(|v| Error::Configuration(v.to_string()))?;
-
-    let logs_exporter = config.logs_exporter.parse()?;
-    let metrics_exporter = config.metrics_exporter.parse()?;
-    let traces_exporter = config.traces_exporter.parse()?;
 
     let mut pairs = vec![
         KeyValue::new(semconv::resource::OTEL_SCOPE_NAME, SCOPE_NAME),
@@ -101,16 +90,9 @@ pub fn new(service_name: &'static str, service_version: &'static str) -> Result<
 
     let resource = Resource::builder().with_attributes(pairs).build();
 
-    let logs_layer = logs::new_layer(resource.clone(), &logs_exporter)?;
-
-    let metrics_layer = metrics::new_layer(resource.clone(), &metrics_exporter)?;
-
-    let traces_layer = traces::new_layer(
-        service_name,
-        resource,
-        &traces_exporter,
-        config.traces_ratio_sample,
-    )?;
+    let logs_layer = logs::new_layer(resource.clone())?;
+    let metrics_layer = metrics::new_layer(resource.clone())?;
+    let traces_layer = traces::new_layer(service_name, resource)?;
 
     tracing_subscriber::registry()
         .with(RPCLayer)

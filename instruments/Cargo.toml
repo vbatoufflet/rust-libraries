@@ -4,7 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
+default = ["stdout"]
 rpc = ["dep:http", "dep:percent-encoding", "dep:tower-http"]
+otlp = ["dep:opentelemetry-otlp"]
+stdout = ["dep:opentelemetry-stdout"]
 
 [dependencies]
 chrono = { workspace = true }
@@ -23,7 +26,7 @@ opentelemetry-otlp = { features = [
     "logs",
     "metrics",
     "trace",
-], workspace = true }
+], optional = true, workspace = true }
 opentelemetry-semantic-conventions = { features = [
     "semconv_experimental",
 ], workspace = true }
@@ -31,7 +34,7 @@ opentelemetry-stdout = { features = [
     "logs",
     "metrics",
     "trace",
-], workspace = true }
+], optional = true, workspace = true }
 paste = { workspace = true }
 percent-encoding = { optional = true, workspace = true }
 serde = { workspace = true }

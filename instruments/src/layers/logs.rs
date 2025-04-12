@@ -1,3 +1,5 @@
+use std::env;
+
 use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
 use opentelemetry_sdk::{
     logs::{SdkLogger, SdkLoggerProvider},
@@ -6,51 +8,55 @@ use opentelemetry_sdk::{
 
 use errors::prelude::*;
 
-use crate::{Error, Exporter};
+use crate::{exporters_from_env, Error, Exporter};
 
 use super::console;
 
 pub fn new_layer(
     resource: Resource,
-    exporter: &Exporter,
 ) -> Result<OpenTelemetryTracingBridge<SdkLoggerProvider, SdkLogger>, Error> {
-    let logger_provider = new_provider(resource, exporter)?;
-
+    let logger_provider = new_provider(resource)?;
     Ok(OpenTelemetryTracingBridge::new(&logger_provider))
 }
 
-fn new_provider(resource: Resource, exporter: &Exporter) -> Result<SdkLoggerProvider, Error> {
-    let provider = match exporter {
-        Exporter::Console => SdkLoggerProvider::builder()
-            .with_resource(resource)
-            .with_simple_exporter(console::logs::LogExporter::default())
-            .build(),
+fn new_provider(resource: Resource) -> Result<SdkLoggerProvider, Error> {
+    let mut builder = SdkLoggerProvider::builder().with_resource(resource);
 
-        Exporter::Noop => SdkLoggerProvider::builder().with_resource(resource).build(),
+    for exporter in exporters_from_env("OTEL_LOGS_EXPORTER")? {
+        match exporter {
+            #[cfg(feature = "stdout")]
+            Exporter::Console => match env::var("OTEL_LOGS_EXPORTER_CONSOLE") {
+                Ok(value) if value == "pretty" => {
+                    let exporter = console::logs::LogExporter::default();
+                    builder = builder.with_batch_exporter(exporter);
+                }
+                _ => {
+                    let exporter = opentelemetry_stdout::LogExporter::default();
+                    builder = builder.with_batch_exporter(exporter);
+                }
+            },
 
-        Exporter::Otlp => {
-            let exporter = opentelemetry_otlp::LogExporter::builder()
-                .with_tonic()
-                .build()
-                .map_err(|v| Error::Internal(v.to_string()))?;
+            Exporter::None => {
+                // No-op
+            }
 
-            SdkLoggerProvider::builder()
-                .with_resource(resource)
-                .with_batch_exporter(exporter)
-                .build()
-        }
+            #[cfg(feature = "otlp")]
+            Exporter::Otlp => {
+                let exporter = opentelemetry_otlp::LogExporter::builder()
+                    .with_tonic()
+                    .build()
+                    .map_err(|v| Error::Internal(v.to_string()))?;
 
-        Exporter::Stdout => {
-            let exporter = opentelemetry_stdout::LogExporter::default();
+                builder = builder.with_batch_exporter(exporter);
+            }
 
-            SdkLoggerProvider::builder()
-                .with_resource(resource)
-                .with_simple_exporter(exporter)
-                .build()
-        }
-    };
+            _ => Err(Error::Configuration(format!(
+                "unsupported logs exporter: {exporter:?}",
+            )))?,
+        };
+    }
 
-    Ok(provider)
+    Ok(builder.build())
 }
 
 #[macro_export]

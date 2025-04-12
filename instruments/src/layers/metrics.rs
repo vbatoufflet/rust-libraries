@@ -9,52 +9,50 @@ use tracing_subscriber::registry::LookupSpan;
 
 use errors::prelude::*;
 
-use crate::{Error, Exporter};
+use crate::{exporters_from_env, Error, Exporter};
 
-pub fn new_layer<S>(resource: Resource, exporter: &Exporter) -> Result<MetricsLayer<S>, Error>
+pub fn new_layer<S>(resource: Resource) -> Result<MetricsLayer<S>, Error>
 where
     S: Subscriber + for<'span> LookupSpan<'span>,
 {
-    let meter_provider = new_provider(resource, exporter)?;
-
+    let meter_provider = new_provider(resource)?;
     global::set_meter_provider(meter_provider.clone());
-
     Ok(MetricsLayer::new(meter_provider))
 }
 
-fn new_provider(resource: Resource, exporter: &Exporter) -> Result<SdkMeterProvider, Error> {
-    #[allow(clippy::match_wildcard_for_single_variants)]
-    let provider = match exporter {
-        Exporter::Noop => SdkMeterProvider::builder().with_resource(resource).build(),
+fn new_provider(resource: Resource) -> Result<SdkMeterProvider, Error> {
+    let mut builder = SdkMeterProvider::builder().with_resource(resource);
 
-        Exporter::Otlp => {
-            let exporter = opentelemetry_otlp::MetricExporter::builder()
-                .with_tonic()
-                .with_temporality(opentelemetry_sdk::metrics::Temporality::Delta)
-                .build()
-                .map_err(|v| Error::Internal(v.to_string()))?;
+    for exporter in exporters_from_env("OTEL_METRICS_EXPORTER")? {
+        match exporter {
+            #[cfg(feature = "stdout")]
+            Exporter::Console => {
+                let exporter = opentelemetry_stdout::MetricExporter::builder().build();
+                builder = builder.with_reader(PeriodicReader::builder(exporter).build());
+            }
 
-            SdkMeterProvider::builder()
-                .with_resource(resource)
-                .with_reader(PeriodicReader::builder(exporter).build())
-                .build()
+            Exporter::None => {
+                // No-op
+            }
+
+            #[cfg(feature = "otlp")]
+            Exporter::Otlp => {
+                let exporter = opentelemetry_otlp::MetricExporter::builder()
+                    .with_tonic()
+                    .with_temporality(opentelemetry_sdk::metrics::Temporality::Delta)
+                    .build()
+                    .map_err(|v| Error::Internal(v.to_string()))?;
+
+                builder = builder.with_reader(PeriodicReader::builder(exporter).build());
+            }
+
+            _ => Err(Error::Configuration(format!(
+                "unsupported metrics exporter: {exporter:?}",
+            )))?,
         }
+    }
 
-        Exporter::Stdout => {
-            let exporter = opentelemetry_stdout::MetricExporter::builder().build();
-
-            SdkMeterProvider::builder()
-                .with_resource(resource)
-                .with_reader(PeriodicReader::builder(exporter).build())
-                .build()
-        }
-
-        _ => Err(Error::Configuration(format!(
-            "unsupported exporter: {exporter:?}",
-        )))?,
-    };
-
-    Ok(provider)
+    Ok(builder.build())
 }
 
 #[macro_export]

@@ -1,7 +1,7 @@
 use opentelemetry::{global, trace::TracerProvider as _};
 use opentelemetry_sdk::{
     propagation::TraceContextPropagator,
-    trace::{Sampler, SdkTracerProvider, Tracer},
+    trace::{SdkTracerProvider, Tracer},
     Resource,
 };
 use tracing::Subscriber;
@@ -10,62 +10,51 @@ use tracing_subscriber::registry::LookupSpan;
 
 use errors::prelude::*;
 
-use crate::{Error, Exporter};
+use crate::{exporters_from_env, Error, Exporter};
 
 pub fn new_layer<S>(
     service_name: &'static str,
     resource: Resource,
-    exporter: &Exporter,
-    ratio_sample: f64,
 ) -> Result<OpenTelemetryLayer<S, Tracer>, Error>
 where
     S: Subscriber + for<'span> LookupSpan<'span>,
 {
-    let tracer_provider = new_provider(resource, ratio_sample, exporter)?;
-
+    let tracer_provider = new_provider(resource)?;
     global::set_text_map_propagator(TraceContextPropagator::new());
     global::set_tracer_provider(tracer_provider.clone());
-
     Ok(OpenTelemetryLayer::new(tracer_provider.tracer(service_name)))
 }
 
-fn new_provider(resource: Resource, sample: f64, exporter: &Exporter) -> Result<SdkTracerProvider, Error> {
-    let sampler = Sampler::TraceIdRatioBased(sample);
+fn new_provider(resource: Resource) -> Result<SdkTracerProvider, Error> {
+    let mut builder = SdkTracerProvider::builder().with_resource(resource);
 
-    #[allow(clippy::match_wildcard_for_single_variants)]
-    let provider = match exporter {
-        Exporter::Noop => SdkTracerProvider::builder()
-            .with_resource(resource)
-            .with_sampler(sampler)
-            .build(),
+    for exporter in exporters_from_env("OTEL_TRACES_EXPORTER")? {
+        match exporter {
+            #[cfg(feature = "stdout")]
+            Exporter::Console => {
+                let exporter = opentelemetry_stdout::SpanExporter::default();
+                builder = builder.with_simple_exporter(exporter);
+            }
 
-        Exporter::Otlp => {
-            let exporter = opentelemetry_otlp::SpanExporter::builder()
-                .with_tonic()
-                .build()
-                .map_err(|v| Error::Internal(v.to_string()))?;
+            Exporter::None => {
+                // No-op
+            }
 
-            SdkTracerProvider::builder()
-                .with_resource(resource)
-                .with_sampler(sampler)
-                .with_batch_exporter(exporter)
-                .build()
-        }
+            #[cfg(feature = "otlp")]
+            Exporter::Otlp => {
+                let exporter = opentelemetry_otlp::SpanExporter::builder()
+                    .with_tonic()
+                    .build()
+                    .map_err(|v| Error::Internal(v.to_string()))?;
 
-        Exporter::Stdout => {
-            let exporter = opentelemetry_stdout::SpanExporter::default();
+                builder = builder.with_batch_exporter(exporter);
+            }
 
-            SdkTracerProvider::builder()
-                .with_resource(resource)
-                .with_sampler(sampler)
-                .with_simple_exporter(exporter)
-                .build()
-        }
+            _ => Err(Error::Configuration(format!(
+                "unsupported traces exporter: {exporter:?}",
+            )))?,
+        };
+    }
 
-        _ => Err(Error::Configuration(format!(
-            "unsupported exporter: {exporter:?}",
-        )))?,
-    };
-
-    Ok(provider)
+    Ok(builder.build())
 }

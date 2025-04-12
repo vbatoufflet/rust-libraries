@@ -78,7 +78,10 @@ impl opentelemetry_sdk::logs::LogExporter for LogExporter {
             ));
 
             if !attributes.is_empty() {
-                let _ = writer.write_fmt(format_args!("{} {}", ",".dimmed(), attributes.join(" "),));
+                if !body.is_empty() {
+                    let _ = writer.write_fmt(format_args!("{}", ", ".dimmed()));
+                }
+                let _ = writer.write_fmt(format_args!("{}", attributes.join(" ")));
             }
 
             let _ = writer.write(b"\n");

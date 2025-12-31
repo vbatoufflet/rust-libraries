@@ -46,16 +46,8 @@ fn expand_derive_config(ast: &syn::DeriveInput) -> TokenStream {
                     .try_deserialize()
                     .map_err(|err| {
                         let msg = err.to_string();
-                        if msg.starts_with("missing field `") && msg.ends_with("`") {
-                            if let Some(field_name) = msg.split('`').nth(1) {
-                                return ConfigError::Message(
-                                    format!(
-                                        r#"environment variable "{}_{}" is not set"#,
-                                        prefix,
-                                        field_name.to_uppercase(),
-                                    )
-                                );
-                            }
+                        if let ConfigError::NotFound(key) = &err {
+                            return ConfigError::NotFound(format!("{}_{}", prefix, key.to_uppercase()));
                         }
                         err
                     })

@@ -9,7 +9,10 @@ use tracing_subscriber::{prelude::*, EnvFilter};
 use config::prelude::*;
 use errors::prelude::*;
 
-use crate::layers::{logs, metrics, rpc::RPCLayer, traces};
+use crate::layers::{logs, metrics, traces};
+
+#[cfg(feature = "rpc")]
+use crate::layers::rpc::RPCLayer;
 
 const SCOPE_NAME: &str = "rust-libraries/instruments";
 
@@ -94,8 +97,12 @@ pub fn new(service_name: &'static str, service_version: &'static str) -> Result<
     let metrics_layer = metrics::new_layer(resource.clone())?;
     let traces_layer = traces::new_layer(service_name, resource)?;
 
-    tracing_subscriber::registry()
-        .with(RPCLayer)
+    let registry = tracing_subscriber::registry();
+
+    #[cfg(feature = "rpc")]
+    let registry = registry.with(RPCLayer);
+
+    registry
         .with(logs_layer.with_filter(EnvFilter::new(&config.logs_filter)))
         .with(metrics_layer.with_filter(EnvFilter::new(&config.metrics_filter)))
         .with(traces_layer.with_filter(EnvFilter::new(&config.traces_filter)))

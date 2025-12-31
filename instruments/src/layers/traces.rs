@@ -53,7 +53,7 @@ fn new_provider(resource: Resource) -> Result<SdkTracerProvider, Error> {
             _ => Err(Error::Configuration(format!(
                 "unsupported traces exporter: {exporter:?}",
             )))?,
-        };
+        }
     }
 
     Ok(builder.build())

@@ -53,7 +53,7 @@ fn new_provider(resource: Resource) -> Result<SdkLoggerProvider, Error> {
             _ => Err(Error::Configuration(format!(
                 "unsupported logs exporter: {exporter:?}",
             )))?,
-        };
+        }
     }
 
     Ok(builder.build())

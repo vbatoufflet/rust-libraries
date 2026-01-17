@@ -10,5 +10,9 @@ serde = { workspace = true }
 # Internal dependencies
 config-derive = { workspace = true }
 
+[dev-dependencies]
+serde = { features = ["derive"], workspace = true }
+tokio = { workspace = true }
+
 [lints]
 workspace = true

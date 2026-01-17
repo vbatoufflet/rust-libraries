@@ -178,6 +178,7 @@ dependencies = [
  "config 0.15.19",
  "config-derive",
  "serde",
+ "tokio",
 ]
 
 [[package]]

@@ -21,11 +21,22 @@ fn expand_derive_config(ast: &syn::DeriveInput) -> TokenStream {
         _ => panic!("expected a struct with named fields"),
     };
 
+    let mut list_fields: Vec<&Ident> = vec![];
+
     let (field_name, field_default): (Vec<&Ident>, Vec<proc_macro2::TokenStream>) = fields
         .iter()
         .filter_map(|field| {
             let field_name = field.ident.as_ref()?;
-            let field_default = match DeriveArgs::from_field(field).ok()?.default? {
+            let args = DeriveArgs::from_field(field).ok()?;
+
+            let is_list = args.list.unwrap_or(false);
+            if is_list {
+                list_fields.push(field_name);
+            }
+
+            let field_default = match args.default? {
+                DefaultValue::Int(int) => quote! { #int },
+                DefaultValue::Path(path) if is_list => quote! { #path.to_vec() },
                 DefaultValue::Path(path) => quote! { #path },
                 DefaultValue::Str(string) => quote! { #string },
             };
@@ -34,6 +45,18 @@ fn expand_derive_config(ast: &syn::DeriveInput) -> TokenStream {
         })
         .unzip();
 
+    let list_config = if list_fields.is_empty() {
+        quote! {}
+    } else {
+        quote! {
+            .try_parsing(true)
+            .list_separator(",")
+            #(
+            .with_list_parse_key(stringify!(#list_fields))
+            )*
+        }
+    };
+
     quote! {
         impl ConfigTrait for #name {
             fn from_env(prefix: &str) -> Result<Self, ConfigError> {
@@ -41,7 +64,10 @@ fn expand_derive_config(ast: &syn::DeriveInput) -> TokenStream {
                     #(
                     .set_default(stringify!(#field_name), #field_default)?
                     )*
-                    .add_source(config::__internal::Environment::with_prefix(prefix))
+                    .add_source(
+                        config::__internal::Environment::with_prefix(prefix)
+                            #list_config
+                    )
                     .build()?
                     .try_deserialize()
                     .map_err(|err| {
@@ -61,10 +87,12 @@ fn expand_derive_config(ast: &syn::DeriveInput) -> TokenStream {
 #[darling(default, attributes(config), forward_attrs(allow, doc, cfg))]
 struct DeriveArgs {
     default: Option<DefaultValue>,
+    list: Option<bool>,
 }
 
 #[derive(Debug)]
 enum DefaultValue {
+    Int(i64),
     Path(ExprPath),
     Str(String),
 }
@@ -73,6 +101,14 @@ impl darling::FromMeta for DefaultValue {
     fn from_meta(meta: &Meta) -> darling::Result<Self> {
         match meta {
             Meta::NameValue(name_value) => match &name_value.value {
+                Expr::Lit(syn::ExprLit {
+                    lit: Lit::Int(lit_int),
+                    ..
+                }) => lit_int
+                    .base10_parse()
+                    .map(Self::Int)
+                    .map_err(|err| darling::Error::custom(err.to_string())),
+
                 Expr::Lit(syn::ExprLit {
                     lit: Lit::Str(lit_str),
                     ..

@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 pub mod prelude {
     pub use config_driver::ConfigError;
 

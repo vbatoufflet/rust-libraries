@@ -22,6 +22,7 @@ fn expand_derive_config(ast: &syn::DeriveInput) -> TokenStream {
     };
 
     let mut list_fields: Vec<&Ident> = vec![];
+    let mut skip_prefix_overrides: Vec<proc_macro2::TokenStream> = vec![];
 
     let (field_name, field_default): (Vec<&Ident>, Vec<proc_macro2::TokenStream>) = fields
         .iter()
@@ -32,6 +33,24 @@ fn expand_derive_config(ast: &syn::DeriveInput) -> TokenStream {
             let is_list = args.list.unwrap_or(false);
             if is_list {
                 list_fields.push(field_name);
+            }
+
+            if args.skip_prefix.unwrap_or(false) {
+                let override_value = if is_list {
+                    quote! {
+                        std::env::var(stringify!(#field_name).to_uppercase())
+                            .ok()
+                            .map(|v| v.split(',').map(|s| s.to_string()).collect::<Vec<_>>())
+                    }
+                } else {
+                    quote! {
+                        std::env::var(stringify!(#field_name).to_uppercase()).ok()
+                    }
+                };
+
+                skip_prefix_overrides.push(quote! {
+                    .set_override_option(stringify!(#field_name), #override_value)?
+                });
             }
 
             let field_default = match args.default? {
@@ -64,6 +83,9 @@ fn expand_derive_config(ast: &syn::DeriveInput) -> TokenStream {
                     #(
                     .set_default(stringify!(#field_name), #field_default)?
                     )*
+                    #(
+                    #skip_prefix_overrides
+                    )*
                     .add_source(
                         config::__internal::Environment::with_prefix(prefix)
                             #list_config
@@ -88,6 +110,7 @@ fn expand_derive_config(ast: &syn::DeriveInput) -> TokenStream {
 struct DeriveArgs {
     default: Option<DefaultValue>,
     list: Option<bool>,
+    skip_prefix: Option<bool>,
 }
 
 #[derive(Debug)]

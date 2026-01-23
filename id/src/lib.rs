@@ -1,17 +1,16 @@
+#[cfg(feature = "serde")]
+mod serde;
+#[cfg(feature = "sqlx")]
+mod sqlx;
+#[cfg(test)]
+mod tests;
+
 use std::{fmt, str};
 
 use base32::Alphabet;
 use uuid::Uuid;
 
 use errors::prelude::*;
-
-#[cfg(test)]
-mod tests;
-
-#[cfg(feature = "serde")]
-mod serde;
-#[cfg(feature = "sqlx")]
-mod sqlx;
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct Id(String, Uuid);

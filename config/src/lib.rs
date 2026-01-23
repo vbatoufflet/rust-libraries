@@ -1,6 +1,3 @@
-#[cfg(test)]
-mod tests;
-
 pub mod prelude {
     pub use config_driver::ConfigError;
 
@@ -14,3 +11,6 @@ pub mod prelude {
 pub mod __internal {
     pub use config_driver::{Config, Environment};
 }
+
+#[cfg(test)]
+mod tests;

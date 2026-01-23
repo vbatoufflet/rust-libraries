@@ -1,3 +1,16 @@
+mod layers;
+
+pub mod prelude {
+    pub use paste::paste as __internal_paste;
+    pub use tracing;
+    pub use tracing::{instrument, Level};
+
+    pub use crate::{counter, histogram};
+    pub use crate::{debug, error, info, trace, warn};
+}
+#[cfg(feature = "rpc")]
+pub mod rpc;
+
 use std::{env, result, str::FromStr, vec::Vec};
 
 use opentelemetry::KeyValue;
@@ -9,26 +22,11 @@ use tracing_subscriber::{prelude::*, EnvFilter};
 use config::prelude::*;
 use errors::prelude::*;
 
-use crate::layers::{logs, metrics, traces};
-
 #[cfg(feature = "rpc")]
 use crate::layers::rpc::RPCLayer;
+use crate::layers::{logs, metrics, traces};
 
 const SCOPE_NAME: &str = "rust-libraries/instruments";
-
-pub mod prelude {
-    pub use paste::paste as __internal_paste;
-    pub use tracing;
-    pub use tracing::{instrument, Level};
-
-    pub use crate::{counter, histogram};
-    pub use crate::{debug, error, info, trace, warn};
-}
-
-mod layers;
-
-#[cfg(feature = "rpc")]
-pub mod rpc;
 
 #[derive(Debug, Error)]
 pub enum Error {

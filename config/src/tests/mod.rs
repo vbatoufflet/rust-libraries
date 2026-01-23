@@ -1,7 +1,6 @@
 use serde::Deserialize;
 
-use crate as config;
-use crate::prelude::*;
+use crate::{self as config, prelude::*};
 
 const DEFAULT_A: &str = "abc";
 

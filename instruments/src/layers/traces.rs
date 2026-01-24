@@ -50,6 +50,7 @@ fn new_provider(resource: Resource) -> Result<SdkTracerProvider, Error> {
                 builder = builder.with_batch_exporter(exporter);
             }
 
+            #[cfg(not(all(feature = "otlp", feature = "stdout")))]
             _ => Err(Error::Configuration(format!(
                 "unsupported traces exporter: {exporter:?}",
             )))?,

@@ -23,6 +23,7 @@ pub type GRPCTraceLayer = TraceLayer<
     InstrumentsOnFailure,
 >;
 
+#[must_use]
 pub fn trace_layer() -> GRPCTraceLayer {
     TraceLayer::new_for_grpc()
         .make_span_with(InstrumentsMakeSpan {})
@@ -38,7 +39,7 @@ pub struct InstrumentsMakeSpan;
 impl<B> MakeSpan<B> for InstrumentsMakeSpan {
     fn make_span(&mut self, request: &Request<B>) -> Span {
         let span_name = &request.uri().path()[1..];
-        let parts = span_name.split_once("/");
+        let parts = span_name.split_once('/');
 
         tracing::span!(
             Level::DEBUG,
@@ -75,7 +76,7 @@ impl<B> OnResponse<B> for InstrumentsOnResponse {
 
         let (rpc_code, rpc_message) = classification_from_headers(response.headers());
 
-        histogram!(rpc_response_latency, Level::INFO, latency.as_millis();
+        histogram!(rpc_response_latency, Level::INFO, u64::try_from(latency.as_millis()).unwrap_or(u64::MAX);
             rpc.code = rpc_code,
             rpc.method = rpc_method,
             rpc.service = rpc_service,
@@ -100,7 +101,7 @@ impl OnEos for InstrumentsOnEos {
         let rpc_method = method_from_span(span);
         let rpc_service = service_from_span(span);
 
-        histogram!(rpc_stream_duration, Level::INFO, stream_duration.as_millis();
+        histogram!(rpc_stream_duration, Level::INFO, u64::try_from(stream_duration.as_millis()).unwrap_or(u64::MAX);
             rpc.method = rpc_method,
             rpc.service = rpc_service,
         );

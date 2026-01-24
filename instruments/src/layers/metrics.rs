@@ -46,6 +46,7 @@ fn new_provider(resource: Resource) -> Result<SdkMeterProvider, Error> {
                 builder = builder.with_reader(PeriodicReader::builder(exporter).build());
             }
 
+            #[cfg(not(all(feature = "otlp", feature = "stdout")))]
             _ => Err(Error::Configuration(format!(
                 "unsupported metrics exporter: {exporter:?}",
             )))?,

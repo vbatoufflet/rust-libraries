@@ -50,6 +50,7 @@ fn new_provider(resource: Resource) -> Result<SdkLoggerProvider, Error> {
                 builder = builder.with_batch_exporter(exporter);
             }
 
+            #[cfg(not(all(feature = "otlp", feature = "stdout")))]
             _ => Err(Error::Configuration(format!(
                 "unsupported logs exporter: {exporter:?}",
             )))?,

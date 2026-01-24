@@ -1,3 +1,6 @@
+// TODO: remove when darling includes fix from https://github.com/TedDriggs/darling/pull/402
+#![allow(clippy::needless_continue)]
+
 use darling::FromField;
 use proc_macro::TokenStream;
 use quote::quote;

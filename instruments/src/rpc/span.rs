@@ -5,10 +5,12 @@ use tracing_subscriber::{registry::LookupSpan, Registry};
 
 use crate::layers::rpc::{RPCMethod, RPCService};
 
+#[must_use]
 pub fn method_from_span(span: &Span) -> Option<String> {
     value_from_span::<RPCMethod>(span)
 }
 
+#[must_use]
 pub fn service_from_span(span: &Span) -> Option<String> {
     value_from_span::<RPCService>(span)
 }

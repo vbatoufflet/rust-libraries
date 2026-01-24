@@ -74,7 +74,7 @@ impl opentelemetry_sdk::logs::LogExporter for LogExporter {
 
             if !attr_buf.is_empty() {
                 if !body.is_empty() {
-                    let _ = writer.write_fmt(format_args!("{}", ", ".dimmed()));
+                    let _ = writer.write_fmt(format_args!("{}", ",".dimmed()));
                 }
                 let _ = writer.write_fmt(format_args!("{attr_buf}"));
             }

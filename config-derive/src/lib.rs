@@ -93,7 +93,6 @@ fn expand_derive_config(ast: &syn::DeriveInput) -> TokenStream {
                     .build()?
                     .try_deserialize()
                     .map_err(|err| {
-                        let msg = err.to_string();
                         if let ConfigError::NotFound(key) = &err {
                             return ConfigError::NotFound(format!("{}_{}", prefix, key.to_uppercase()));
                         }

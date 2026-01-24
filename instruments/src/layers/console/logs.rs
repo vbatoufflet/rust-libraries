@@ -1,5 +1,5 @@
 use std::{
-    fmt::{Debug, Formatter},
+    fmt::{Debug, Formatter, Write as FmtWrite},
     io::{self, Stdout, Write},
     sync::Mutex,
 };
@@ -38,6 +38,8 @@ impl opentelemetry_sdk::logs::LogExporter for LogExporter {
             return Err(OTelSdkError::AlreadyShutdown);
         };
 
+        let mut attr_buf = String::new();
+
         for (record, _) in batch.iter() {
             let ts = match record.observed_timestamp().or_else(|| record.timestamp()) {
                 Some(v) => Into::<DateTime<Utc>>::into(v),
@@ -46,29 +48,22 @@ impl opentelemetry_sdk::logs::LogExporter for LogExporter {
 
             let severity = severity_to_str(record.severity_number());
 
-            let attributes: Vec<String> = record
-                .attributes_iter()
-                .filter_map(|(key, value)| {
-                    let mut key: String = key.as_str().to_string();
-                    key.push('=');
-
-                    let value = match value {
-                        AnyValue::Int(value) => value.to_string(),
-                        AnyValue::Double(value) => value.to_string(),
-                        AnyValue::String(value) => value.to_string(),
-                        AnyValue::Boolean(value) => value.to_string(),
-                        _ => return None,
-                    };
-
-                    Some(format!("{}{}", key.dimmed(), value))
-                })
-                .collect();
-
-            let body = if let Some(AnyValue::String(body)) = &record.body() {
-                body.to_string()
-            } else {
-                continue;
+            let body = match record.body() {
+                Some(AnyValue::String(body)) => body.as_str(),
+                _ => continue,
             };
+
+            attr_buf.clear();
+            for (key, value) in record.attributes_iter() {
+                let v: &dyn std::fmt::Display = match value {
+                    AnyValue::Int(v) => v,
+                    AnyValue::Double(v) => v,
+                    AnyValue::String(v) => v,
+                    AnyValue::Boolean(v) => v,
+                    _ => continue,
+                };
+                let _ = write!(attr_buf, " {}{v}", format!("{}=", key.as_str()).dimmed());
+            }
 
             let _ = writer.write_fmt(format_args!(
                 "{} {:>7} {}",
@@ -77,11 +72,11 @@ impl opentelemetry_sdk::logs::LogExporter for LogExporter {
                 body,
             ));
 
-            if !attributes.is_empty() {
+            if !attr_buf.is_empty() {
                 if !body.is_empty() {
                     let _ = writer.write_fmt(format_args!("{}", ", ".dimmed()));
                 }
-                let _ = writer.write_fmt(format_args!("{}", attributes.join(" ")));
+                let _ = writer.write_fmt(format_args!("{attr_buf}"));
             }
 
             let _ = writer.write(b"\n");

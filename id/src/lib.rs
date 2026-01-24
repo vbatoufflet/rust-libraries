@@ -5,7 +5,7 @@ mod sqlx;
 #[cfg(test)]
 mod tests;
 
-use std::{fmt, str};
+use std::{borrow::Cow, fmt, str};
 
 use base32::Alphabet;
 use uuid::Uuid;
@@ -13,22 +13,22 @@ use uuid::Uuid;
 use errors::prelude::*;
 
 #[derive(Clone, Eq, PartialEq)]
-pub struct Id(String, Uuid);
+pub struct Id(Cow<'static, str>, Uuid);
 
 impl Id {
     #[must_use]
-    pub fn new_ordered(prefix: &str) -> Self {
-        Self(prefix.to_owned(), Uuid::now_v7())
+    pub fn new_ordered(prefix: &'static str) -> Self {
+        Self(Cow::Borrowed(prefix), Uuid::now_v7())
     }
 
     #[must_use]
-    pub fn new_unordered(prefix: &str) -> Self {
-        Self(prefix.to_owned(), Uuid::new_v4())
+    pub fn new_unordered(prefix: &'static str) -> Self {
+        Self(Cow::Borrowed(prefix), Uuid::new_v4())
     }
 
     pub fn from_slice(prefix: &str, b: &[u8]) -> Result<Self, Error> {
         let uuid = Uuid::from_slice(b).map_err(|_| Error::Uuid)?;
-        Ok(Self(prefix.to_owned(), uuid))
+        Ok(Self(Cow::Owned(prefix.to_owned()), uuid))
     }
 
     #[must_use]
@@ -75,7 +75,7 @@ impl str::FromStr for Id {
         };
 
         Ok(Self(
-            prefix.to_owned(),
+            Cow::Owned(prefix.to_owned()),
             Uuid::from_slice(&uuid).map_err(|_| Error::Uuid)?,
         ))
     }

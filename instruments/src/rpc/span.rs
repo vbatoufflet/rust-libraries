@@ -25,7 +25,7 @@ where
                 span.extensions()
                     .get::<Option<T>>()
                     .and_then(|method| method.as_ref())
-                    .map(|v| v.deref().clone())
+                    .map(|v| v.to_string())
             })
     })
     .flatten()

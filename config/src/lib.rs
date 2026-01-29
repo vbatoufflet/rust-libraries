@@ -1,3 +1,7 @@
+mod env;
+
+pub use env::*;
+
 pub mod prelude {
     pub use config_driver::ConfigError;
 

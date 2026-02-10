@@ -1,7 +1,7 @@
+pub mod logs;
+
 use colored::{ColoredString, Colorize};
 use opentelemetry::logs::Severity;
-
-pub mod logs;
 
 pub fn severity_to_str(severity: Option<Severity>) -> ColoredString {
     match severity {

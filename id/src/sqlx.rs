@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use sqlx::{Database, Decode, Encode, Type};
 
-use super::Id;
+use crate::Id;
 
 impl<DB: Database> Type<DB> for Id
 where

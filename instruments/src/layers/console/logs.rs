@@ -1,5 +1,5 @@
 use std::{
-    fmt::{Debug, Formatter, Write as FmtWrite},
+    fmt::{self, Debug, Formatter, Write as _},
     io::{self, Stdout, Write},
     sync::Mutex,
 };
@@ -27,7 +27,7 @@ impl Default for LogExporter {
 }
 
 impl Debug for LogExporter {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str("LogsExporter")
     }
 }

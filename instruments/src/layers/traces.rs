@@ -8,8 +8,6 @@ use tracing::Subscriber;
 use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::registry::LookupSpan;
 
-use errors::prelude::*;
-
 use crate::{exporters_from_env, Error, Exporter};
 
 pub fn new_layer<S>(

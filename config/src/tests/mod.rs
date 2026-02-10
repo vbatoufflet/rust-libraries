@@ -57,20 +57,6 @@ async fn list_config_defaults() {
 }
 
 #[tokio::test]
-async fn list_config_empty_list() {
-    std::env::set_var("CONFIG_TEST_EMPTY_A", "def");
-    std::env::set_var("CONFIG_TEST_EMPTY_B", "");
-
-    let config = ListConfig::from_env("CONFIG_TEST_EMPTY").unwrap();
-
-    assert_eq!(config.a, "def");
-    assert_eq!(config.b, vec![""]);
-
-    std::env::remove_var("CONFIG_TEST_EMPTY_A");
-    std::env::remove_var("CONFIG_TEST_EMPTY_B");
-}
-
-#[tokio::test]
 async fn list_config_overrides() {
     std::env::set_var("CONFIG_TEST_LIST_A", "def");
     std::env::set_var("CONFIG_TEST_LIST_B", "d,e,f");
@@ -85,7 +71,21 @@ async fn list_config_overrides() {
 }
 
 #[tokio::test]
-async fn list_config_single_item() {
+async fn list_config_with_empty_list() {
+    std::env::set_var("CONFIG_TEST_EMPTY_A", "def");
+    std::env::set_var("CONFIG_TEST_EMPTY_B", "");
+
+    let config = ListConfig::from_env("CONFIG_TEST_EMPTY").unwrap();
+
+    assert_eq!(config.a, "def");
+    assert_eq!(config.b, vec![""]);
+
+    std::env::remove_var("CONFIG_TEST_EMPTY_A");
+    std::env::remove_var("CONFIG_TEST_EMPTY_B");
+}
+
+#[tokio::test]
+async fn list_config_with_single_item() {
     std::env::set_var("CONFIG_TEST_SINGLE_A", "def");
     std::env::set_var("CONFIG_TEST_SINGLE_B", "a");
 

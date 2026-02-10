@@ -1,5 +1,8 @@
 mod layers;
 
+#[cfg(feature = "rpc")]
+pub mod rpc;
+
 pub mod prelude {
     pub use paste::paste as __internal_paste;
     pub use tracing;
@@ -8,10 +11,8 @@ pub mod prelude {
     pub use crate::{counter, histogram};
     pub use crate::{debug, error, info, trace, warn};
 }
-#[cfg(feature = "rpc")]
-pub mod rpc;
 
-use std::{env, result, str::FromStr, vec::Vec};
+use std::{env, str::FromStr};
 
 use opentelemetry::KeyValue;
 use opentelemetry_sdk::Resource;
@@ -28,7 +29,7 @@ use crate::layers::{logs, metrics, traces};
 
 const SCOPE_NAME: &str = "rust-libraries/instruments";
 
-#[derive(Debug, Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("{0}")]
     Configuration(String),
@@ -47,7 +48,7 @@ pub enum Exporter {
 impl FromStr for Exporter {
     type Err = Error;
 
-    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_ascii_lowercase().as_str() {
             "console" => Ok(Self::Console),
             "none" => Ok(Self::None),

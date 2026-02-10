@@ -1,5 +1,8 @@
 mod env;
 
+#[cfg(test)]
+mod tests;
+
 pub use env::*;
 
 pub mod prelude {
@@ -15,6 +18,3 @@ pub mod prelude {
 pub mod __internal {
     pub use config_driver::{Config, Environment};
 }
-
-#[cfg(test)]
-mod tests;

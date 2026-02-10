@@ -30,13 +30,39 @@ async fn parse() -> Result<()> {
 }
 
 #[tokio::test]
-async fn roundtrip_nil() -> Result<()> {
-    let id = Id::from_slice("x", &[0u8; 16])?;
-    let s = id.to_string();
-    assert_eq!(s, "x_0000000000000000000000000");
-    assert_eq!(Id::from_str(&s)?.uuid(), id.uuid());
+async fn parse_with_invalid_character() {
+    assert_eq!(
+        Id::from_str("prf_03cwcoe5guuex91dd4hzrpzs!"),
+        Err(crate::Error::Encoding)
+    );
+}
 
-    Ok(())
+#[tokio::test]
+async fn parse_with_missing_separator() {
+    assert_eq!(
+        Id::from_str("prf03cwcoe5guuex91dd4hzrpzso"),
+        Err(crate::Error::GroupCount)
+    );
+}
+
+#[tokio::test]
+async fn parse_with_uppercase() {
+    assert_eq!(
+        Id::from_str("prf_03CWCOE5GUUEX91DD4HZRPZSO"),
+        Err(crate::Error::Encoding)
+    );
+}
+
+#[tokio::test]
+async fn parse_with_wrong_length() {
+    assert_eq!(
+        Id::from_str("prf_03cwcoe5guuex91dd4hzrpzs"),
+        Err(crate::Error::Encoding)
+    );
+    assert_eq!(
+        Id::from_str("prf_03cwcoe5guuex91dd4hzrpzsoo"),
+        Err(crate::Error::Encoding)
+    );
 }
 
 #[tokio::test]
@@ -50,46 +76,20 @@ async fn roundtrip_max() -> Result<()> {
 }
 
 #[tokio::test]
+async fn roundtrip_nil() -> Result<()> {
+    let id = Id::from_slice("x", &[0u8; 16])?;
+    let s = id.to_string();
+    assert_eq!(s, "x_0000000000000000000000000");
+    assert_eq!(Id::from_str(&s)?.uuid(), id.uuid());
+
+    Ok(())
+}
+
+#[tokio::test]
 async fn sort_order_preserved() -> Result<()> {
     let id1 = Id::new_ordered("prf");
     let id2 = Id::new_ordered("prf");
     assert!(id1.to_string() <= id2.to_string());
 
     Ok(())
-}
-
-#[tokio::test]
-async fn missing_separator() {
-    assert_eq!(
-        Id::from_str("prf03cwcoe5guuex91dd4hzrpzso"),
-        Err(crate::Error::GroupCount)
-    );
-}
-
-#[tokio::test]
-async fn wrong_length() {
-    assert_eq!(
-        Id::from_str("prf_03cwcoe5guuex91dd4hzrpzs"),
-        Err(crate::Error::Encoding)
-    );
-    assert_eq!(
-        Id::from_str("prf_03cwcoe5guuex91dd4hzrpzsoo"),
-        Err(crate::Error::Encoding)
-    );
-}
-
-#[tokio::test]
-async fn invalid_character() {
-    assert_eq!(
-        Id::from_str("prf_03cwcoe5guuex91dd4hzrpzs!"),
-        Err(crate::Error::Encoding)
-    );
-}
-
-#[tokio::test]
-async fn uppercase_rejected() {
-    assert_eq!(
-        Id::from_str("prf_03CWCOE5GUUEX91DD4HZRPZSO"),
-        Err(crate::Error::Encoding)
-    );
 }

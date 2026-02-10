@@ -1,12 +1,14 @@
 mod base36;
+
 #[cfg(feature = "serde")]
 mod serde;
 #[cfg(feature = "sqlx")]
 mod sqlx;
+
 #[cfg(test)]
 mod tests;
 
-use std::{borrow::Cow, fmt, str};
+use std::{borrow::Cow, fmt, str::FromStr};
 
 use uuid::Uuid;
 
@@ -60,7 +62,7 @@ impl fmt::Display for Id {
     }
 }
 
-impl str::FromStr for Id {
+impl FromStr for Id {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -74,7 +76,7 @@ impl str::FromStr for Id {
     }
 }
 
-#[derive(Debug, Eq, Error, PartialEq)]
+#[derive(Debug, Eq, PartialEq, thiserror::Error)]
 pub enum Error {
     #[error("group count")]
     GroupCount,

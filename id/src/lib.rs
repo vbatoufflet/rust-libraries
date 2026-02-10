@@ -1,3 +1,4 @@
+mod base36;
 #[cfg(feature = "serde")]
 mod serde;
 #[cfg(feature = "sqlx")]
@@ -7,7 +8,6 @@ mod tests;
 
 use std::{borrow::Cow, fmt, str};
 
-use base32::Alphabet;
 use uuid::Uuid;
 
 use errors::prelude::*;
@@ -40,25 +40,23 @@ impl Id {
     pub fn uuid(&self) -> &Uuid {
         &self.1
     }
-
-    fn fmt(&self) -> String {
-        format!(
-            "{}_{}",
-            self.0,
-            base32::encode(Alphabet::Crockford, self.1.as_bytes()).to_lowercase()
-        )
-    }
 }
 
 impl fmt::Debug for Id {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "\"{}\"", self.fmt())
+        f.write_str("\"")?;
+        f.write_str(&self.0)?;
+        f.write_str("_")?;
+        base36::write(f, &self.1)?;
+        f.write_str("\"")
     }
 }
 
 impl fmt::Display for Id {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.fmt())
+        f.write_str(&self.0)?;
+        f.write_str("_")?;
+        base36::write(f, &self.1)
     }
 }
 
@@ -70,14 +68,9 @@ impl str::FromStr for Id {
             return Err(Error::GroupCount);
         };
 
-        let Some(uuid) = base32::decode(Alphabet::Crockford, &id.to_uppercase()) else {
-            return Err(Error::Encoding);
-        };
+        let uuid = base36::read(id)?;
 
-        Ok(Self(
-            Cow::Owned(prefix.to_owned()),
-            Uuid::from_slice(&uuid).map_err(|_| Error::Uuid)?,
-        ))
+        Ok(Self(Cow::Owned(prefix.to_owned()), uuid))
     }
 }
 

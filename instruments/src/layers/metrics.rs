@@ -102,6 +102,24 @@ macro_rules! counter {
 }
 
 #[macro_export]
+macro_rules! gauge {
+    ($name:expr, $lvl:expr, $value:expr; $($fields:tt)*) => {
+        __internal_paste! {
+            tracing::event!(
+                target: module_path!(),
+                $lvl,
+                gauge.$name = $value as f64,
+                $($fields)*,
+            )
+        }
+    };
+
+    ($name:expr, $lvl:expr, $value:expr) => {
+        $crate::gauge!($name, $lvl, $value;)
+    };
+}
+
+#[macro_export]
 macro_rules! histogram {
     ($name:expr, $lvl:expr, $value:expr; $($fields:tt)*) => {
         __internal_paste! {
@@ -116,5 +134,31 @@ macro_rules! histogram {
 
     ($name:expr, $lvl:expr, $value:expr) => {
         $crate::histogram!($name, $lvl;)
+    };
+}
+
+#[macro_export]
+macro_rules! monotonic_counter {
+    ($name:expr, $lvl:expr, $value:expr; $($fields:tt)*) => {
+        __internal_paste! {
+            tracing::event!(
+                target: module_path!(),
+                $lvl,
+                monotonic_counter.$name = $value,
+                $($fields)*,
+            )
+        }
+    };
+
+    ($name:expr, $lvl:expr, $value:expr) => {
+        $crate::monotonic_counter!($name, $lvl, $value;)
+    };
+
+    ($name:expr, $lvl:expr; $($fields:tt)+) => {
+        $crate::monotonic_counter!($name, $lvl, 1; $($fields)+)
+    };
+
+    ($name:expr, $lvl:expr) => {
+        $crate::monotonic_counter!($name, $lvl, 1;)
     };
 }

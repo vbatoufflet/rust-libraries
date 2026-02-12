@@ -8,7 +8,7 @@ pub mod prelude {
     pub use tracing;
     pub use tracing::{instrument, Level};
 
-    pub use crate::{counter, histogram};
+    pub use crate::{counter, gauge, histogram, monotonic_counter};
     pub use crate::{debug, error, info, trace, warn};
 }
 

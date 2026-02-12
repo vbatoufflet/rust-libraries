@@ -1,3 +1,6 @@
+#[cfg(feature = "otlp")]
+use std::env;
+
 use opentelemetry::global;
 use opentelemetry_sdk::{
     metrics::{PeriodicReader, SdkMeterProvider},
@@ -6,6 +9,9 @@ use opentelemetry_sdk::{
 use tracing::Subscriber;
 use tracing_opentelemetry::MetricsLayer;
 use tracing_subscriber::registry::LookupSpan;
+
+#[cfg(feature = "otlp")]
+use opentelemetry_sdk::metrics::Temporality;
 
 use crate::{exporters_from_env, Error, Exporter};
 
@@ -35,9 +41,24 @@ fn new_provider(resource: Resource) -> Result<SdkMeterProvider, Error> {
 
             #[cfg(feature = "otlp")]
             Exporter::Otlp => {
+                let temporality = match env::var("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE")
+                    .unwrap_or_else(|_| "cumulative".to_owned())
+                    .to_ascii_lowercase()
+                    .as_str()
+                {
+                    "cumulative" => Temporality::Cumulative,
+                    "delta" => Temporality::Delta,
+                    "lowmemory" => Temporality::LowMemory,
+                    s => {
+                        return Err(Error::Configuration(format!(
+                            "unsupported metrics temporality: {s}",
+                        )))
+                    }
+                };
+
                 let exporter = opentelemetry_otlp::MetricExporter::builder()
                     .with_tonic()
-                    .with_temporality(opentelemetry_sdk::metrics::Temporality::Delta)
+                    .with_temporality(temporality)
                     .build()
                     .map_err(|v| Error::Internal(v.to_string()))?;
 

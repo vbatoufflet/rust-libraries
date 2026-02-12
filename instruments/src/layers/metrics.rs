@@ -75,6 +75,16 @@ fn new_provider(resource: Resource) -> Result<SdkMeterProvider, Error> {
     Ok(builder.build())
 }
 
+pub fn is_metric_event(metadata: &tracing::Metadata<'_>) -> bool {
+    metadata.fields().iter().any(|f| {
+        let name = f.name();
+        name.starts_with("counter.")
+            || name.starts_with("gauge.")
+            || name.starts_with("histogram.")
+            || name.starts_with("monotonic_counter.")
+    })
+}
+
 #[macro_export]
 macro_rules! counter {
     ($name:expr, $lvl:expr, $value:expr; $($fields:tt)*) => {

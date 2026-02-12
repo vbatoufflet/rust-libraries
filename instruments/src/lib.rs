@@ -18,7 +18,7 @@ use opentelemetry::KeyValue;
 use opentelemetry_sdk::Resource;
 use opentelemetry_semantic_conventions as semconv;
 use serde::Deserialize;
-use tracing_subscriber::{prelude::*, EnvFilter};
+use tracing_subscriber::{filter::FilterFn, prelude::*, EnvFilter};
 
 use config::prelude::*;
 use errors::prelude::*;
@@ -102,7 +102,11 @@ pub fn new(service_name: &'static str, service_version: &'static str) -> Result<
     let registry = registry.with(RPCLayer);
 
     registry
-        .with(logs_layer.with_filter(EnvFilter::new(&config.logs_filter)))
+        .with(
+            logs_layer
+                .with_filter(FilterFn::new(|metadata| !metrics::is_metric_event(metadata)))
+                .with_filter(EnvFilter::new(&config.logs_filter)),
+        )
         .with(metrics_layer.with_filter(EnvFilter::new(&config.metrics_filter)))
         .with(traces_layer.with_filter(EnvFilter::new(&config.traces_filter)))
         .init();

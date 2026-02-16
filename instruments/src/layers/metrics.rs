@@ -143,7 +143,7 @@ macro_rules! histogram {
     };
 
     ($name:expr, $lvl:expr, $value:expr) => {
-        $crate::histogram!($name, $lvl;)
+        $crate::histogram!($name, $lvl, $value;)
     };
 }
 

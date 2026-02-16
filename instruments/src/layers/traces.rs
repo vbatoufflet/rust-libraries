@@ -8,7 +8,7 @@ use tracing::Subscriber;
 use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::registry::LookupSpan;
 
-use crate::{exporters_from_env, Error, Exporter};
+use crate::{exporters_from_env, Error, Exporter, TRACER_PROVIDER};
 
 pub fn new_layer<S>(
     service_name: &'static str,
@@ -20,6 +20,7 @@ where
     let tracer_provider = new_provider(resource)?;
     global::set_text_map_propagator(TraceContextPropagator::new());
     global::set_tracer_provider(tracer_provider.clone());
+    let _ = TRACER_PROVIDER.set(tracer_provider.clone());
     Ok(OpenTelemetryLayer::new(tracer_provider.tracer(service_name)))
 }
 

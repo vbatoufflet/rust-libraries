@@ -8,7 +8,7 @@ use opentelemetry_sdk::{
 
 use errors::prelude::*;
 
-use crate::{exporters_from_env, Error, Exporter};
+use crate::{exporters_from_env, Error, Exporter, LOGGER_PROVIDER};
 
 use super::console;
 
@@ -16,6 +16,7 @@ pub fn new_layer(
     resource: Resource,
 ) -> Result<OpenTelemetryTracingBridge<SdkLoggerProvider, SdkLogger>, Error> {
     let logger_provider = new_provider(resource)?;
+    let _ = LOGGER_PROVIDER.set(logger_provider.clone());
     Ok(OpenTelemetryTracingBridge::new(&logger_provider))
 }
 

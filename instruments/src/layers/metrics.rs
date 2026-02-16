@@ -13,7 +13,7 @@ use tracing_subscriber::registry::LookupSpan;
 #[cfg(feature = "otlp")]
 use opentelemetry_sdk::metrics::Temporality;
 
-use crate::{exporters_from_env, Error, Exporter};
+use crate::{exporters_from_env, Error, Exporter, METER_PROVIDER};
 
 pub fn new_layer<S>(resource: Resource) -> Result<MetricsLayer<S, SdkMeterProvider>, Error>
 where
@@ -21,6 +21,7 @@ where
 {
     let meter_provider = new_provider(resource)?;
     global::set_meter_provider(meter_provider.clone());
+    let _ = METER_PROVIDER.set(meter_provider.clone());
     Ok(MetricsLayer::new(meter_provider))
 }
 

@@ -12,10 +12,12 @@ pub mod prelude {
     pub use crate::{debug, error, info, trace, warn};
 }
 
-use std::{env, str::FromStr};
+use std::{env, str::FromStr, sync::OnceLock};
 
 use opentelemetry::KeyValue;
-use opentelemetry_sdk::Resource;
+use opentelemetry_sdk::{
+    logs::SdkLoggerProvider, metrics::SdkMeterProvider, trace::SdkTracerProvider, Resource,
+};
 use opentelemetry_semantic_conventions as semconv;
 use serde::Deserialize;
 use tracing_subscriber::{filter::FilterFn, prelude::*, EnvFilter};
@@ -28,6 +30,12 @@ use crate::layers::rpc::RPCLayer;
 use crate::layers::{logs, metrics, traces};
 
 const SCOPE_NAME: &str = "rust-libraries/instruments";
+
+static LOGGER_PROVIDER: OnceLock<SdkLoggerProvider> = OnceLock::new();
+
+static METER_PROVIDER: OnceLock<SdkMeterProvider> = OnceLock::new();
+
+static TRACER_PROVIDER: OnceLock<SdkTracerProvider> = OnceLock::new();
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -112,4 +120,16 @@ pub fn new(service_name: &'static str, service_version: &'static str) -> Result<
         .init();
 
     Ok(())
+}
+
+pub fn force_flush() {
+    if let Some(provider) = LOGGER_PROVIDER.get() {
+        let _ = provider.force_flush();
+    }
+    if let Some(provider) = METER_PROVIDER.get() {
+        let _ = provider.force_flush();
+    }
+    if let Some(provider) = TRACER_PROVIDER.get() {
+        let _ = provider.force_flush();
+    }
 }
